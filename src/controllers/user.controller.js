@@ -274,9 +274,9 @@ const getCurrentUser= asyncHandler(async(req,res)=>{
 })
 
 const updateUserDetails = asyncHandler(async(req,res)=>{
-    const {fullName, email} = req.body
+    const {fullname, email} = req.body
 
-    if (!fullName || !email) {
+    if (!fullname || !email) {
         throw new ApiError(400, "All fields are required")
     }
 
@@ -284,7 +284,7 @@ const updateUserDetails = asyncHandler(async(req,res)=>{
         req.user?._id,
         {
             $set: {
-                fullName,
+                fullname,
                 email: email
             }
         },
@@ -403,7 +403,9 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
                 },
                 isSubscribed:{
                     $cond:{
-                        if:$in[req?.user._id,"$subscribers.subscriber"],
+                        if:{
+                            $in:[req?.user._id,"$subscribers.subscriber"],
+                        },
                         then: true,
                         else: false
                     }
@@ -459,7 +461,7 @@ const getWatchHistory = asyncHandler(async(req,res)=>{
                             pipeline:[
                                 {
                                     $project:{
-                                        fullName: 1,
+                                        fullname: 1,
                                         username: 1,
                                         avatar: 1
                                     }
