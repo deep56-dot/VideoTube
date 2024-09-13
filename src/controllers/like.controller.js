@@ -1,8 +1,8 @@
 import { isValidObjectId } from "mongoose";
-import { asyncHandler } from "../utils/asyncHandler";
-import { ApiError } from "../utils/ApiError";
-import { Like } from "../models/like.model";
-import { ApiResponse } from "../utils/ApiResponse";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { Like } from "../models/like.model.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 
 const toggleVideoLike = asyncHandler(async(req,res)=>{
@@ -78,7 +78,7 @@ const getAllLikedVideos = asyncHandler(async(req,res)=>{
         {
             $match:{
                 likedBy:req.user?._id,
-                video:{exists:true}
+                video:{$exists:true}
             }
         },
         {
@@ -106,8 +106,10 @@ const getAllLikedVideos = asyncHandler(async(req,res)=>{
                         }
                     },
                     {
-                        $addFields:{
-                            $first:"$owner"
+                        $addFields :{
+                            owner:{
+                                $first:"$owner"
+                            }
                         }
                     }
                 ]

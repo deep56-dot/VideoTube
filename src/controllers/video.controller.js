@@ -1,8 +1,9 @@
 import mongoose, { isValidObjectId } from "mongoose";
-import { Video } from "../models/video.model";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import { asyncHandler } from "../utils/asyncHandler";
+import { Video } from "../models/video.model.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -25,7 +26,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
             {
                 $or:[
                     {
-                        owner: userId? new mongoose.Types.objectId(userId):null
+                        owner: userId ? new mongoose.Types.ObjectId(userId) : null,
+                        isPublished:  true, 
                     },
                     {
                         $and:[
@@ -35,7 +37,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
                             {
                                 $or:[
                                     {
-                                        title: query?{$regex:query,$options:"i"}:{$exits:true}
+                                        title: query?{$regex:query,$options:"i"}:{$exists:true}
                                     },
                                     {
                                         description: query?{$regex:query,$options:"i"}:null
@@ -67,7 +69,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         },
         {
             $sort:{
-                [sortBy]:sortType===dsc?-1:1
+                [sortBy]:sortType==="dsc"?-1:1
             },
 
         },
@@ -96,11 +98,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
     
       return res
         .status(200)
-        .json(new ApiRes(200,"Videos fetched successfully", result));
+        .json(new ApiResponse(200,"Videos fetched successfully", result));
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
-    const { title, description,isPublished = true,} = req.body
+    const { title, description,isPublished = true} = req.body
 
     if (
         [title, description].some((field) => field?.trim() === "")
@@ -117,8 +119,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Both Files  are required")
     }
 
-    const videoFileCld = await uploadOnCloudinary(avatarLocalPath)
-    const thumbnailCld = await uploadOnCloudinary(coverImageLocalPath)
+    const videoFileCld = await uploadOnCloudinary(videoLocalPath)
+    const thumbnailCld = await uploadOnCloudinary(thumbnailLocalPath)
 
     if (!videoFileCld || !thumbnailCld) {
         throw new ApiError(500, "video or thubnail not uploded on cloudinary")
@@ -257,7 +259,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     
       return res
         .status(200)
-        .json(new ApiRes(200, video[0], "Video fetched successfully"));
+        .json(new ApiResponse(200, video[0], "Video fetched successfully"));
 
 
 })
@@ -301,7 +303,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     }
     else{
 
-        const thumbnailCld = await uploadOnCloudinary(coverImageLocalPath)
+        const thumbnailCld = await uploadOnCloudinary(thumbnailLocalPath)
     
         if ( !thumbnailCld) {
             throw new ApiError(500, "thubnail not uploded on cloudinary")
@@ -353,7 +355,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     
       return res
         .status(200)
-        .json(new ApiRes(200,  "Video deleted successfully",{}));
+        .json(new ApiResponse(200,  "Video deleted successfully",{}));
 
 })
 
@@ -380,12 +382,13 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     return res
       .status(200)
       .json(
-        new ApiRes(
+        new ApiResponse(
           200,
-          {},
           `Video successfully ${
             updatedVideo.isPublished ? "Published" : "Unpublished"
-          }`
+          }`,
+          {}
+         
         )
       );
 })
